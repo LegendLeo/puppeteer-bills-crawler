@@ -1,0 +1,7 @@
+{
+  "alipay": {
+    "username": "xxxx",
+    "password": "xxxx",
+    "url": "https://login.taobao.com/member/login.jhtml?style=alipay&goto=https%3A%2F%2Fconsumeprod.alipay.com%2Frecord%2Fstandard.htm"
+  }
+}
