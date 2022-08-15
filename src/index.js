@@ -1,5 +1,5 @@
 const puppeteer = require('puppeteer');
-const { passTaobaoVerify } = require('./utils');
+const { passTaobaoVerify, writeConfigInfo } = require('./utils');
 const hackBrowser = require('./utils/hackBrowser');
 const config = require('./config.json');
 
@@ -39,7 +39,11 @@ const config = require('./config.json');
         status: tr.querySelector('td.status').innerHTML.match(/\n\t\t<p>(.+)<\/p>\n/)[1]
       })).filter(res => !res.status.includes('交易关闭'));
     });
-    console.log('data===', data);
+    const targetIndex = data.findIndex(item => item.id === config.alipay.data.lastRecortId);
+    console.log('data===',targetIndex, data.slice(0, targetIndex));
+    writeConfigInfo({
+      lastRecortId: data[0].id
+    });
   } catch (error) {
     console.log('error===', error);
   }

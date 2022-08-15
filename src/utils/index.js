@@ -1,3 +1,7 @@
+const fs = require('fs');
+const path = require('path');
+const config = require('../config.json');
+
 module.exports = {
   setCookies: async (cookies_str, page, domain) => {
     let cookies = cookies_str.split(';').map(pair => {
@@ -27,18 +31,18 @@ module.exports = {
       await page.mouse.down();
       await page.mouse.move(
         handle.x + slider.width / 2,
-        handle.y + handle.height / 2,
+        handle.y + handle.height / 2 + Math.random() * 30,
         { steps: 30 }
       );
       await page.waitForTimeout(100);
       await page.mouse.move(
-        handle.x + slider.width / 2 - 30,
-        handle.y + handle.height / 2 + Math.random() * 50,
+        handle.x + slider.width / 2 + 60,
+        handle.y + handle.height / 2 + Math.random() * 40,
         { steps: 20 }
       );
       await page.mouse.move(
         handle.x + slider.width,
-        handle.y + handle.height / 2 - Math.random() * 50,
+        handle.y + handle.height / 2 + Math.random() * 40,
         { steps: 60 }
       );
       await page.mouse.up();
@@ -50,4 +54,9 @@ module.exports = {
     }
     await slide();
   },
+  writeConfigInfo: async function (data) {
+    const result = Object.assign(config, {})
+    result.alipay.data = data
+    await fs.writeFileSync(path.resolve(__dirname, '../config.json'), JSON.stringify(result, null, 2));
+  }
 };
