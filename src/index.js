@@ -16,12 +16,13 @@ const config = require('./config.json');
   const page = await browser.newPage();
   await hackBrowser(page);
   await page.goto(config.alipay.url, { waitUntil: 'networkidle2' });
-
+  // 输入账号密码
   await page.type('#fm-login-id', config.alipay.username, { delay: 80 });
   await page.waitForTimeout(500);
   await page.type('#fm-login-password', config.alipay.password, { delay: 80 });
   await passTaobaoVerify(page);
   await page.click('#login-form > div.fm-btn > button');
+  // 等待两次跳转
   await page.waitForNavigation();
   await page.waitForNavigation();
 
@@ -29,17 +30,32 @@ const config = require('./config.json');
   try {
     const data = await page.evaluate(() => {
       const lines = [...document.querySelectorAll('tbody tr')];
-      return lines.map(tr => ({
-        date: tr.querySelector('.time-d').textContent.match(/\d{4}\.\d{2}\.\d{2}/)[0],
-        time: tr.querySelector('.time-h').textContent.match(/\d{2}\:\d{2}/)[0],
-        amount: +tr.querySelector('.amount-pay').textContent.replace(/\s/g, ''),
-        name: tr.querySelector('p.name').textContent.match(/\n\t\t\t\t\t(.+)\n\t\t\t/)[1],
-        title: tr.querySelector('.consume-title').textContent.match(/\n\n\n\t(.+)\n/)[1],
-        id: tr.querySelector('.tradeNo').textContent.match(/(?:\u4ea4\u6613\u53f7|\u6d41\u6c34\u53f7):(\d{28})/)[1],
-        status: tr.querySelector('td.status').innerHTML.match(/\n\t\t<p>(.+)<\/p>\n/)[1]
-      })).filter(res => !res.status.includes('交易关闭'));
+      return lines.map((tr, index) => {
+        if (tr.classList.contains('J-item-refund')) {
+          // 处理退款记录
+          const originOrder = lines[index - 1];
+          return {
+            date: originOrder.querySelector('.time-d').textContent.match(/\d{4}\.\d{2}\.\d{2}/)[0],
+            time: originOrder.querySelector('.time-h').textContent.match(/\d{2}\:\d{2}/)[0],
+            amount: +tr.querySelector('.amount-pay').textContent.replace(/\s/g, ''),
+            name: '退款',
+            title: '退款',
+            orderId: originOrder.querySelector('.tradeNo').textContent.match(/(?:\u4ea4\u6613\u53f7|\u6d41\u6c34\u53f7):(\d{28})/)[1],
+            status: '退款成功'
+          }
+        }
+        return {
+          date: tr.querySelector('.time-d').textContent.match(/\d{4}\.\d{2}\.\d{2}/)[0],
+          time: tr.querySelector('.time-h').textContent.match(/\d{2}\:\d{2}/)[0],
+          amount: +tr.querySelector('.amount-pay').textContent.replace(/\s/g, ''),
+          name: tr.querySelector('p.name').textContent.match(/\n\t\t\t\t\t(.+)\n\t\t\t/)[1],
+          title: tr.querySelector('.consume-title').textContent.match(/\n\n\n\t(.+)\n/)[1],
+          id: tr.querySelector('.tradeNo').textContent.match(/(?:\u4ea4\u6613\u53f7|\u6d41\u6c34\u53f7):(\d{28})/)[1],
+          status: tr.querySelector('td.status').innerHTML.match(/\n\t\t<p>(.+)<\/p>\n/)[1]
+        }
+      }).filter(res => !res.status.includes('交易关闭'));
     });
-    const targetIndex = data.findIndex(item => item.id === config.alipay.data.lastRecortId);
+    const targetIndex = data.findIndex(item => item.orderId === config.alipay.data.lastRecortId);
     console.log('data===',targetIndex, data.slice(0, targetIndex));
     writeConfigInfo({
       lastRecortId: data[0].id
